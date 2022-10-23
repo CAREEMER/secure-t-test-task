@@ -1,18 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 from starlette import status
+
+from api.utils import check_password, hash_password
 from core.db import get_session
-from models.user import User
 from models.auth import Session
+from models.user import User
 from serializers.user import UserCreate
-from api.utils import hash_password, check_password
-from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register/")
-async def register_user(user_data: UserCreate, session = Depends(get_session)) -> User:
+async def register_user(user_data: UserCreate, session=Depends(get_session)) -> User:
     user = User(username=user_data.username, password=hash_password(user_data.password))
     session.add(user)
     try:
@@ -25,7 +26,7 @@ async def register_user(user_data: UserCreate, session = Depends(get_session)) -
 
 
 @router.post("/login/")
-async def login(user_data: UserCreate, session = Depends(get_session)) -> Session:
+async def login(user_data: UserCreate, session=Depends(get_session)) -> Session:
     user_query = select(User).where(User.username == user_data.username)
     user = (await session.execute(user_query)).scalar()
     if not user:

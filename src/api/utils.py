@@ -1,7 +1,8 @@
-import hashlib
 import base64
-from core.config import app_config
+import hashlib
 import secrets
+
+from core.config import app_config
 
 
 def pbkdf2(password: str, iterations: int = 100_000, dklen: int = 0, digest=hashlib.sha256):
@@ -13,7 +14,7 @@ def pbkdf2(password: str, iterations: int = 100_000, dklen: int = 0, digest=hash
 
 def hash_password(password: str, iterations: int = 100_000, salt: str = app_config.HASH_SALT) -> str:
     hash = pbkdf2(password)
-    hash = base64.b64encode(hash).decode('ascii').strip()
+    hash = base64.b64encode(hash).decode("ascii").strip()
     return "sha-256$%d$%s$%s" % (iterations, salt, hash)
 
 
