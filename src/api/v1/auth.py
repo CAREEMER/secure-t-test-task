@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import select, delete
+from sqlmodel import delete, select
 from starlette import status
 
 from api.deps.auth import auth_user_and_get_token
@@ -14,40 +14,40 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register/")
-async def register_user(user_data: UserCreate, session=Depends(get_session)) -> User:
+async def register_user(user_data: UserCreate, db_session=Depends(get_session)) -> User:
     user = User(username=user_data.username, password=hash_password(user_data.password))
-    session.add(user)
+    db_session.add(user)
     try:
-        await session.commit()
+        await db_session.commit()
     except IntegrityError as _:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with that username already exists.")
-    await session.refresh(user)
+    await db_session.refresh(user)
 
     return user
 
 
 @router.post("/login/")
-async def login(user_data: UserCreate, session=Depends(get_session)) -> Session:
+async def login(user_data: UserCreate, db_session=Depends(get_session)) -> Session:
     user_query = select(User).where(User.username == user_data.username)
-    user = (await session.execute(user_query)).scalar()
+    user = (await db_session.execute(user_query)).scalar()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wrong username or password.")
 
     if check_password(user_data.password, user.password):
-        session_o = Session(user_uuid=user.uuid)
-        session.add(session_o)
-        await session.commit()
-        await session.refresh(session_o)
+        auth_session = Session(user_uuid=user.uuid)
+        db_session.add(auth_session)
+        await db_session.commit()
+        await db_session.refresh(auth_session)
 
-        return session_o
+        return auth_session
 
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wrong username or password.")
 
 
 @router.post("/logout/")
-async def logout(session_o=Depends(auth_user_and_get_token), session=Depends(get_session)):
+async def logout(session_o=Depends(auth_user_and_get_token), db_session=Depends(get_session)):
     delete_session_query = delete(Session).where(Session.key == session_o.key)
-    await session.execute(delete_session_query)
-    await session.commit()
+    await db_session.execute(delete_session_query)
+    await db_session.commit()
     return Response(status_code=status.HTTP_202_ACCEPTED)

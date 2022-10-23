@@ -5,8 +5,8 @@ Revises: 926e3b4fc20d
 Create Date: 2022-10-21 22:41:35.163819
 
 """
-import sqlalchemy as sa
-import sqlmodel
+import sqlalchemy as sa  # NOQA: F401
+import sqlmodel  # NOQA: F401
 from alembic import op
 from sqlalchemy.dialects import postgresql
 

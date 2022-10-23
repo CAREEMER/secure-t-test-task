@@ -1,7 +1,5 @@
-from typing import List
 from uuid import UUID
 
-import sqlalchemy
 from sqlmodel import Field, Relationship
 
 from models.base import ModelBase

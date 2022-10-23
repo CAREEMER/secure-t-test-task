@@ -1,6 +1,5 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import APIKeyHeader
-from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from starlette import status
 
@@ -21,24 +20,26 @@ def escape_auth_header(header_value: str) -> str:
     )
 
 
-async def auth_user(session=Depends(get_session), authorization: str = Depends(session_header)) -> User:
+async def auth_user(db_session=Depends(get_session), authorization: str = Depends(session_header)) -> User:
     token = escape_auth_header(authorization)
-    session_query = select(Session, User).where(Session.key == token).join(User, isouter=True)
+    auth_session_query = select(Session, User).where(Session.key == token).join(User, isouter=True)
 
-    result = (await session.execute(session_query)).one()
+    result = (await db_session.execute(auth_session_query)).one()
     if not result:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    _session_o, user = result
+    _auth_session, user = result
     return user
 
 
-async def auth_user_and_get_token(session=Depends(get_session), authorization: str = Depends(session_header)) -> Session:
+async def auth_user_and_get_token(
+    db_session=Depends(get_session), authorization: str = Depends(session_header)
+) -> Session:
     token = escape_auth_header(authorization)
-    session_query = select(Session).where(Session.key == token)
+    auth_session_query = select(Session).where(Session.key == token)
 
-    session = (await session.execute(session_query)).scalar()
-    if not session:
+    auth_session = (await db_session.execute(auth_session_query)).scalar()
+    if not auth_session:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    return session
+    return auth_session
