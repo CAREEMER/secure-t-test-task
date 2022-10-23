@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import APIKeyHeader
-from sqlmodel import select
+from sqlalchemy import select
 from starlette import status
 
 from core.db import get_session

@@ -1,11 +1,11 @@
-from uuid import UUID, uuid4
+from uuid import uuid4
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import Column, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
 
-from models.user import User
+from models.base import Base
 
 
-class Session(SQLModel, table=True):
-    user_uuid: UUID = Field(nullable=False, foreign_key="user.uuid")
-    user: User = Relationship(back_populates="sessions")
-    key: UUID = Field(default_factory=uuid4, nullable=False, index=True, primary_key=True)
+class Session(Base):
+    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
+    key = Column(UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)

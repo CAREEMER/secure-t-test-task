@@ -1,13 +1,13 @@
 from fastapi import Depends, HTTPException
-from sqlmodel import func, select
+from sqlalchemy import func, select
 from starlette import status
 
 from core.db import get_session
 from models.post import Post, PostUpvote
 
 
-async def get_post_or_404(post_uuid: str, session=Depends(get_session)):
-    post_query = select(Post).where(Post.uuid == post_uuid)
+async def get_post_or_404(post_id: str, session=Depends(get_session)):
+    post_query = select(Post).where(Post.id == post_id)
     post = (await session.execute(post_query)).scalar()
 
     if not post:

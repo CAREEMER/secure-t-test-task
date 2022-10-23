@@ -1,14 +1,19 @@
-import datetime
-import uuid as uuid_pkg
+from uuid import uuid4
 
-from sqlmodel import Field, SQLModel
+from sqlalchemy import Column, DateTime, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import declarative_base
 
 
-class ModelBase(SQLModel):
-    uuid: uuid_pkg.UUID = Field(
-        default_factory=uuid_pkg.uuid4,
-        primary_key=True,
-        index=True,
-        nullable=False,
-    )
-    created_at: datetime.datetime = Field(default_factory=datetime.datetime.now, nullable=False)
+class Base(object):
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
+
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, nullable=False, default=uuid4)
+    time_created = Column(DateTime(timezone=True), server_default=func.now())
+    time_updated = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+Base = declarative_base(cls=Base)

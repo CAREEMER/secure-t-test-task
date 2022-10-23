@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import delete, select
 from starlette import status
 
 from api.deps.auth import auth_user_and_get_token
@@ -17,10 +17,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register_user(user_data: UserCreate, db_session=Depends(get_session)) -> User:
     user = User(username=user_data.username, password=hash_password(user_data.password))
     db_session.add(user)
-    try:
-        await db_session.commit()
-    except IntegrityError as _:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with that username already exists.")
+    # try:
+    await db_session.commit()
+    # except IntegrityError as _:
+    #     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with that username already exists.")
     await db_session.refresh(user)
 
     return user
@@ -34,7 +34,7 @@ async def login(user_data: UserCreate, db_session=Depends(get_session)) -> Sessi
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wrong username or password.")
 
     if check_password(user_data.password, user.password):
-        auth_session = Session(user_uuid=user.uuid)
+        auth_session = Session(user_id=user.id)
         db_session.add(auth_session)
         await db_session.commit()
         await db_session.refresh(auth_session)
@@ -46,8 +46,8 @@ async def login(user_data: UserCreate, db_session=Depends(get_session)) -> Sessi
 
 
 @router.post("/logout/")
-async def logout(session_o=Depends(auth_user_and_get_token), db_session=Depends(get_session)):
-    delete_session_query = delete(Session).where(Session.key == session_o.key)
+async def logout(session=Depends(auth_user_and_get_token), db_session=Depends(get_session)):
+    delete_session_query = delete(Session).where(Session.key == session.key)
     await db_session.execute(delete_session_query)
     await db_session.commit()
     return Response(status_code=status.HTTP_202_ACCEPTED)

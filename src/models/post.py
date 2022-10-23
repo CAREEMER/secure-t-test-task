@@ -1,41 +1,32 @@
-from uuid import UUID
+from sqlalchemy import Boolean, Column, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import UUID
 
-from sqlmodel import Field, Relationship
-
-from models.base import ModelBase
-from models.user import User
+from models.base import Base
 
 
-class EntityBase(ModelBase):
-    author_uuid: UUID = Field(nullable=False, foreign_key="user.uuid", index=True)
-    text: str
+class EntityBase(Base):
+    __abstract__ = True
+
+    text = Column(Text, nullable=False)
 
 
-class Post(EntityBase, table=True):
-    author: "User" = Relationship(back_populates="posts")
-    upvotes: list["PostUpvote"] = Relationship(back_populates="parent_post")
+class Post(EntityBase):
+    author_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
 
 
-class Comment(EntityBase, table=True):
-    author: "User" = Relationship(back_populates="comments")
-    parent_post_uuid: UUID = Field(nullable=False, foreign_key="post.uuid", index=True)
-    parent_post: "Post" = Relationship(back_populates="upvotes")
-    parent_comment_uuid: UUID = Field(nullable=True, foreign_key="comment.uuid")
-    parent_comment: "Comment" = Relationship(back_populates="child_comment")
-    child_comments: list["Comment"] = Relationship(back_populates="parent_comment")
+class Comment(EntityBase):
+    author_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
+    parent_post_id = Column(UUID(as_uuid=True), ForeignKey("post.id"), nullable=False, index=True)
+    parent_comment_id = Column(UUID(as_uuid=True), ForeignKey("comment.id"), nullable=False)
 
 
-class PostUpvote(ModelBase, table=True):
-    user_uuid: UUID = Field(nullable=False, foreign_key="user.uuid", index=True)
-    user: "User" = Relationship(back_populates="post_upvotes")
-    post_uuid: UUID = Field(nullable=False, foreign_key="post.uuid", index=True)
-    post: "Post" = Relationship(back_populates="upvotes")
-    positive: bool = Field(nullable=False, default=True)
+class PostUpvote(Base):
+    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False, index=True)
+    post_id = Column(UUID(as_uuid=True), ForeignKey("post.id"), nullable=False, index=True)
+    positive = Column(Boolean, default=True)
 
 
-class CommentUpvote(ModelBase, table=True):
-    user_uuid: UUID = Field(nullable=False, foreign_key="user.uuid", index=True)
-    user: "User" = Relationship(back_populates="comment_upvotes")
-    comment_uuid: UUID = Field(nullable=False, foreign_key="comment.uuid", index=True)
-    comment: "Comment" = Relationship(back_populates="upvotes")
-    positive: bool = Field(nullable=False, default=True)
+class CommentUpvote(Base):
+    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False, index=True)
+    comment_uuid = Column(UUID(as_uuid=True), ForeignKey("comment.id"), nullable=False, index=True)
+    positive = Column(Boolean, default=True)
