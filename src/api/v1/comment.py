@@ -1,15 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import select
-from starlette import status
+from fastapi import APIRouter, Depends
 
-from api.services.auth import auth_user
-from api.utils import check_password, hash_password
+from api.deps.auth import auth_user
 from core.db import get_session
-from models.auth import Session
 from models.post import Post
 from models.user import User
 from serializers.post import PostCreate
-from serializers.user import UserCreate
 
 router = APIRouter(prefix="/comment")
 

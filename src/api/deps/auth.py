@@ -23,11 +23,22 @@ def escape_auth_header(header_value: str) -> str:
 
 async def auth_user(session=Depends(get_session), authorization: str = Depends(session_header)) -> User:
     token = escape_auth_header(authorization)
-    # session_query = select(Session, User).where(Session.key == token).join(User, isouter=True)
-    session_query = select(Session).where(Session.key == token).options(selectinload(Session.user))
+    session_query = select(Session, User).where(Session.key == token).join(User, isouter=True)
 
     result = (await session.execute(session_query)).one()
     if not result:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    return result
+    _session_o, user = result
+    return user
+
+
+async def auth_user_and_get_token(session=Depends(get_session), authorization: str = Depends(session_header)) -> Session:
+    token = escape_auth_header(authorization)
+    session_query = select(Session).where(Session.key == token)
+
+    session = (await session.execute(session_query)).scalar()
+    if not session:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+    return session

@@ -1,16 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlmodel import delete, func, select
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import delete, select
 from starlette import status
 
-from api.services.auth import auth_user
-from api.services.post import get_post_or_404, get_post_with_aggregations_or_404
-from api.utils import check_password, hash_password
+from api.deps.auth import auth_user
+from api.deps.post import get_post_or_404, get_post_with_aggregations_or_404
 from core.db import get_session
-from models.auth import Session
 from models.post import Post, PostUpvote
 from models.user import User
 from serializers.post import PostCreate, PostRetrieve
-from serializers.user import UserCreate
 
 router = APIRouter(prefix="/post")
 

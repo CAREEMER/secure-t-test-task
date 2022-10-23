@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import select
+from sqlmodel import select, delete
 from starlette import status
 
+from api.deps.auth import auth_user_and_get_token
 from api.utils import check_password, hash_password
 from core.db import get_session
 from models.auth import Session
@@ -42,3 +43,11 @@ async def login(user_data: UserCreate, session=Depends(get_session)) -> Session:
 
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wrong username or password.")
+
+
+@router.post("/logout/")
+async def logout(session_o=Depends(auth_user_and_get_token), session=Depends(get_session)):
+    delete_session_query = delete(Session).where(Session.key == session_o.key)
+    await session.execute(delete_session_query)
+    await session.commit()
+    return Response(status_code=status.HTTP_202_ACCEPTED)
