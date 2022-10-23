@@ -3,13 +3,14 @@ from sqlalchemy import delete, select
 from starlette import status
 
 from api.deps.auth import auth_user
-from api.deps.post import get_post_or_404, get_post_with_aggregations_or_404
+from api.deps.post import get_post_or_404
 from core.db import get_session
-from models.post import Post, PostUpvote
+from models.post import Post, PostUpvote, Comment
 from models.user import User
 from serializers.post import PostCreate, PostRetrieve
+from serializers.comment import CommentCreate
 
-router = APIRouter(prefix="/post")
+router = APIRouter(prefix="/post", tags=["post"])
 
 
 @router.post("/")
@@ -21,21 +22,14 @@ async def create_post(post_data: PostCreate, user: User = Depends(auth_user), db
     return post
 
 
-@router.get("/")
+@router.get("/{post_id}/")
 async def get_post(
-    post: Post = Depends(get_post_with_aggregations_or_404), session=Depends(get_session)
+    post: Post = Depends(get_post_or_404)
 ) -> PostRetrieve:
-    # upvotes_count_query = select([func.count()]).where(PostUpvote.post_uuid == post.uuid).where(PostUpvote.positive == True).select_from(PostUpvote)
-    # downvotes_count_query = select([func.count()]).where(PostUpvote.post_uuid == post.uuid).where(PostUpvote.positive == False).select_from(PostUpvote)
-    #
-    # upvotes_count = (await session.execute(upvotes_count_query)).scalar()
-    # downvotes_count = (await session.execute(downvotes_count_query)).scalar()
-    #
-    # return PostRetrieve(**post.dict(), upvote_count=upvotes_count - downvotes_count)
-    pass
+    return post
 
 
-@router.post("/{post_uuid}/upvote/")
+@router.post("/{post_id}/upvote/")
 async def bump_post(
     user: User = Depends(auth_user), post: Post = Depends(get_post_or_404), db_session=Depends(get_session)
 ) -> PostUpvote:
@@ -56,7 +50,7 @@ async def bump_post(
     return upvote
 
 
-@router.post("/{post_uuid}/downvote/")
+@router.post("/{post_id}/downvote/")
 async def sage_post(
     user: User = Depends(auth_user), post: Post = Depends(get_post_or_404), session=Depends(get_session)
 ) -> PostUpvote:
