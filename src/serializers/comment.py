@@ -1,7 +1,5 @@
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel
 
 
 class CommentCreate(BaseModel):
     text: str
-    parent_comment_id: UUID4 | None
-    parent_post_id: UUID4 | None

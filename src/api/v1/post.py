@@ -5,10 +5,9 @@ from starlette import status
 from api.deps.auth import auth_user
 from api.deps.post import get_post_or_404
 from core.db import get_session
-from models.post import Post, PostUpvote, Comment
+from models.post import Post, PostUpvote
 from models.user import User
 from serializers.post import PostCreate, PostRetrieve
-from serializers.comment import CommentCreate
 
 router = APIRouter(prefix="/post", tags=["post"])
 
@@ -23,9 +22,7 @@ async def create_post(post_data: PostCreate, user: User = Depends(auth_user), db
 
 
 @router.get("/{post_id}/")
-async def get_post(
-    post: Post = Depends(get_post_or_404)
-) -> PostRetrieve:
+async def get_post(post: Post = Depends(get_post_or_404)) -> PostRetrieve:
     return post
 
 

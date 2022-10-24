@@ -17,10 +17,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register_user(user_data: UserCreate, db_session=Depends(get_session)) -> User:
     user = User(username=user_data.username, password=hash_password(user_data.password))
     db_session.add(user)
-    # try:
-    await db_session.commit()
-    # except IntegrityError as _:
-    #     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with that username already exists.")
+    try:
+        await db_session.commit()
+    except IntegrityError as _:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with that username already exists.")
     await db_session.refresh(user)
 
     return user
