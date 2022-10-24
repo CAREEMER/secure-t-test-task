@@ -31,8 +31,6 @@ def main():
         port=app_config.PORT,
         reload=app_config.ENV == "local",
         workers=1,
-        ws_ping_interval=None,
-        ws_ping_timeout=None,
     )
 
 

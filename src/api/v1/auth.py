@@ -3,6 +3,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from starlette import status
 
+from serializers.user import UserRetrieve
 from api.deps.auth import auth_user_and_get_token
 from api.utils import check_password, hash_password
 from core.db import get_session
@@ -23,7 +24,7 @@ async def register_user(user_data: UserCreate, db_session=Depends(get_session)) 
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with that username already exists.")
     await db_session.refresh(user)
 
-    return user
+    return UserRetrieve(**user.dict())
 
 
 @router.post("/login/")
