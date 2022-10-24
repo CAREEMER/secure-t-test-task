@@ -8,7 +8,7 @@ from models.post import CommentThread, Post
 router = APIRouter(prefix="/thread", tags=["thread"])
 
 
-@router.post("/")
+@router.get("/")
 async def list_threads(
     post: Post = Depends(get_post_or_404), offset: int = 0, limit: int = 10, session=Depends(get_session)
 ):

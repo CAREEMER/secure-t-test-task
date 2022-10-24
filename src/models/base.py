@@ -15,5 +15,9 @@ class Base(object):
     time_created = Column(DateTime(timezone=True), server_default=func.now())
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
 
+    def dict(self):
+        attrs = {c.name: getattr(self, c.name) for c in self.__table__.columns if getattr(self, c.name, False)}
+        return attrs
+
 
 Base = declarative_base(cls=Base)

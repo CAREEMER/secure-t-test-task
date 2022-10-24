@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from models.base import Base
 
 """
-Comment threading logic at DB level:
+Comment threading logic at DB level.
 
 1) When creating comment without parent_comment_id, new thread being populated (thread-0),
 comment with parent_comment_id inherits parent's thread_id.
@@ -44,10 +44,10 @@ Attaching comments to each other being managed only by threads logic.
 
 Comment threading logic at API level:
 
-1) GET /thread/?post_id=XXXX
+1) GET /api/v1/thread/?post_id=XXXX
 returns primary threads attached to post_id
 
-2) GET /comment/?thread_id=YYYY&offset=0&limit=10
+2) GET /api/v1/comment/?thread_id=YYYY&offset=0&limit=10
 returns list of comments in the thread, with following structure:
 
 {
@@ -75,7 +75,7 @@ class Comment(TextEntityBase):
     author_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
     attached_to_thread_id = Column(UUID(as_uuid=True), ForeignKey("commentthread.id"), nullable=False, index=True)
     # attached_to_thread = relationship("CommentThread", foreign_keys=[attached_to_thread_id])
-    attached_threads = relationship("CommentThread", foreign_keys="[CommentThread.comment_id]", uselist=True)
+    # attached_threads = relationship("CommentThread", foreign_keys="[CommentThread.comment_id]", uselist=True)
 
 
 class CommentThread(Base):

@@ -19,7 +19,7 @@ async def register_user(user_data: UserCreate, db_session=Depends(get_session)) 
     db_session.add(user)
     try:
         await db_session.commit()
-    except IntegrityError as _:
+    except IntegrityError as _:  # NOQA: F841
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with that username already exists.")
     await db_session.refresh(user)
 
