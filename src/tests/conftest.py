@@ -32,7 +32,7 @@ class TestClientAuthMixin(BaseMixin):
         resp = requests.post(UrlEndpoints.login.value, json={"username": username, "password": password})
 
         if resp.ok:
-            self.auth_token = resp.json()["key"]
+            self.auth_token = resp.json()["token"]
         return resp
 
     def logout(self):
