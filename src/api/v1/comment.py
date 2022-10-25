@@ -1,12 +1,17 @@
+from uuid import uuid4
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
+from sqlalchemy.orm import selectinload, immediateload, lazyload, joinedload
+from sqlalchemy_utils import Ltree
 from starlette import status
 
 from api.deps.auth import auth_user
-from api.deps.thread import get_or_create_thread, get_thread_or_404
-from api.deps.comment import get_comment_or_404
-from core.db import get_session
-from models.post import Comment, CommentThread
+from api.deps.comment import get_comment_or_404, get_parent_comment_or_404
+from api.deps.post import get_post_or_404
+from api.utils import escape_ltree_path
+from core.db import get_session, get_sync_session
+from models.post import Comment, Post
 from models.user import User
 from serializers.comment import CommentCreate, CommentList
 
@@ -16,14 +21,22 @@ router = APIRouter(prefix="/comment", tags=["comment"])
 @router.post("/")
 async def create_comment(
     comment_data: CommentCreate,
+    parent_comment: Comment | None = Depends(get_parent_comment_or_404),
     user: User = Depends(auth_user),
-    thread=Depends(get_or_create_thread),
-    session=Depends(get_session),
+    db_session=Depends(get_session),
 ):
-    comment = Comment(**comment_data.dict(), attached_to_thread_id=thread.id, author_id=user.id)
-    session.add(comment)
-    await session.commit()
-    await session.refresh(comment)
+    comment = Comment(**comment_data.dict(), id=uuid4(), author_id=user.id)
+
+    if not parent_comment:
+        ltree_node_path = escape_ltree_path(f"{comment.id}")
+    else:
+        ltree_node_path = escape_ltree_path(f"{parent_comment.node_path}.{comment.id}")
+
+    comment.node_path = Ltree(ltree_node_path)
+
+    db_session.add(comment)
+    await db_session.commit()
+    await db_session.refresh(comment)
 
     return comment
 
@@ -45,39 +58,14 @@ async def update_comment(
     return comment
 
 
-
 @router.get("/")
-async def list_comment(
-    thread: CommentThread = Depends(get_thread_or_404), offset: int = 0, limit: int = 10, session=Depends(get_session)
-):
-    comment_query = (
+async def list_comment(post: Post = Depends(get_post_or_404), db_session=Depends(get_sync_session)):
+    comments_query = (
         select(Comment)
-        .where(Comment.attached_to_thread_id == thread.id)
-        .order_by(Comment.time_created)
-        .offset(offset)
-        .limit(limit)
+        .where(Comment.post_id == post.id)
+        .where(func.nlevel(Comment.node_path) == 1)
+        # .options(lazyload(Comment.children))
     )
-    comments = (await session.execute(comment_query)).scalars().all()
-    _comment_ids = [_comment.id for _comment in comments]
+    comments = (db_session.execute(comments_query)).scalars().all()
 
-    comment_thread_query = select(CommentThread.id, CommentThread.comment_id).where(
-        CommentThread.comment_id.in_(_comment_ids)
-    )
-    comment_threads = (await session.execute(comment_thread_query)).all()
-
-    #  pizdec... zato vsego lish' 2 db queries :)
-    #  LEFT OUTER JOIN s paginaciei ne poluchilos' podruzhit' :)
-    comment_id_thread_ids_map = {}
-    for th in comment_threads:
-        if not comment_id_thread_ids_map.get(th[1], None):
-            comment_id_thread_ids_map[th[1]] = [th[0]]
-        else:
-            comment_id_thread_ids_map[th[1]].append(th[0])
-
-    serialized_comments = []
-    for comment in comments:
-        data = comment.dict()
-        data["threads_attached_to_comment"] = comment_id_thread_ids_map.get(comment.id, [])
-        serialized_comments.append(CommentList(**data))
-
-    return serialized_comments
+    return [CommentList(**comment.dict(), children=getattr(comment, "children", [])) for comment in comments]

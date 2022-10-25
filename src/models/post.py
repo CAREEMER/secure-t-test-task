@@ -1,63 +1,9 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Text
+from sqlalchemy import Boolean, Column, ForeignKey, Index, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import foreign, relationship, remote
+from sqlalchemy_utils import LtreeType
 
 from models.base import Base
-
-"""
-Comment threading logic at DB level.
-
-1) When creating comment without parent_comment_id, new thread being populated (thread-0),
-comment with parent_comment_id inherits parent's thread_id.
-
-[Post]
-  |
-  | [thread-0  primary=True]  (primary means thread attached directly to the post, not comment)
-  L__ [comment-0]
-      L__ [comment-1]
-          L__ [comment-2]
-
-
-2) When creating comment with parent_comment_id that already exists in DB, new thread is
-being populated with primary=False.
-
-[Post]
-  |
-  | [thread-0 primary=True]
-  L__ [comment-0]
-  |   L__ [comment-1]
-  |       L__ [comment-2]
-  |       |
-  |       | [thread-1 primary=False]
-  |       L__ [comment-3]
-  |       |   L__ [comment-4]
-  |       |
-  |       | [thread-2 primary=False]
-  |       L__ [comment-3]
-  |
-  | [thread-3 primary=True]
-  L__ [comment-5]
-
-Attaching comments to each other being managed only by threads logic.
-
-
-
-Comment threading logic at API level:
-
-1) GET /api/v1/thread/?post_id=XXXX
-returns primary threads attached to post_id
-
-2) GET /api/v1/comment/?thread_id=YYYY&offset=0&limit=10
-returns list of comments in the thread, with following structure:
-
-{
-id: UUID4,
-attached_thread: UUID4 | None,
-threads_attached_to_comment: list[UUID4],
-...
-}
-
-"""
 
 
 class TextEntityBase(Base):
@@ -73,15 +19,16 @@ class Post(TextEntityBase):
 
 class Comment(TextEntityBase):
     author_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
-    attached_to_thread_id = Column(UUID(as_uuid=True), ForeignKey("commentthread.id"), nullable=False, index=True)
-    # attached_to_thread = relationship("CommentThread", foreign_keys=[attached_to_thread_id])
-    # attached_threads = relationship("CommentThread", foreign_keys="[CommentThread.comment_id]", uselist=True)
+    post_id = Column(UUID(as_uuid=True), ForeignKey("post.id"), nullable=False)
+    node_path = Column(LtreeType, nullable=False)
+    parent = relationship(
+        "Comment",
+        primaryjoin=(remote(node_path) == foreign(func.subpath(node_path, 0, -1))),
+        backref="children",
+        viewonly=True,
+    )
 
-
-class CommentThread(Base):
-    post_id = Column(UUID(as_uuid=True), ForeignKey("post.id"), nullable=True, index=True)
-    comment_id = Column(UUID(as_uuid=True), ForeignKey("comment.id"), nullable=True, index=True)
-    # comment = relationship("Comment", back_populates="attached_threads", foreign_keys=[comment_id])
+    __table_args__ = (Index("ix_nodes_path", node_path, postgresql_using="gist"),)
 
 
 class PostUpvote(Base):

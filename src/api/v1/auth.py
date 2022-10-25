@@ -3,13 +3,12 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from starlette import status
 
-from serializers.user import UserRetrieve
 from api.deps.auth import auth_user_and_get_token
 from api.utils import check_password, hash_password
 from core.db import get_session
 from models.auth import Session
 from models.user import User
-from serializers.user import UserCreate
+from serializers.user import UserCreate, UserRetrieve
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

@@ -25,3 +25,7 @@ def constant_time_compare(val1: str, val2: str):
 
 def check_password(password: str, hashed_password: str) -> bool:
     return constant_time_compare(hash_password(password), hashed_password)
+
+
+def escape_ltree_path(path: str) -> str:
+    return path.replace("-", "_")

@@ -14,3 +14,18 @@ async def get_comment_or_404(comment_id: str, db_session=Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found.")
 
     return comment
+
+
+async def get_parent_comment_or_404(
+    parent_comment_id: str | None = None, db_session=Depends(get_session)
+) -> Comment | None:
+    if not parent_comment_id:
+        return
+
+    comment_query = select(Comment).where(Comment.id == parent_comment_id)
+    comment = (await db_session.execute(comment_query)).scalar()
+
+    if not comment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found.")
+
+    return comment

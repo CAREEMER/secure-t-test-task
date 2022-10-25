@@ -24,11 +24,11 @@ async def auth_user(db_session=Depends(get_session), authorization: str = Depend
     token = escape_auth_header(authorization)
     auth_session_query = select(Session, User).where(Session.key == token).join(User, isouter=True)
 
-    result = (await db_session.execute(auth_session_query)).one()
+    result = (await db_session.execute(auth_session_query)).all()
     if not result:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    _auth_session, user = result
+    _auth_session, user = result[0]
     return user
 
 
