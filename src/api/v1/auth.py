@@ -13,7 +13,7 @@ from serializers.user import UserCreate, UserRetrieve
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register/")
+@router.post("/register/", status_code=status.HTTP_201_CREATED)
 async def register_user(user_data: UserCreate, db_session=Depends(get_session)) -> User:
     user = User(username=user_data.username, password=hash_password(user_data.password))
     db_session.add(user)
@@ -26,7 +26,7 @@ async def register_user(user_data: UserCreate, db_session=Depends(get_session)) 
     return UserRetrieve(**user.dict())
 
 
-@router.post("/login/")
+@router.post("/login/", status_code=status.HTTP_201_CREATED)
 async def login(user_data: UserCreate, db_session=Depends(get_session)) -> Session:
     user_query = select(User).where(User.username == user_data.username)
     user = (await db_session.execute(user_query)).scalar()
@@ -45,9 +45,9 @@ async def login(user_data: UserCreate, db_session=Depends(get_session)) -> Sessi
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wrong username or password.")
 
 
-@router.post("/logout/")
+@router.post("/logout/", status_code=status.HTTP_202_ACCEPTED)
 async def logout(session=Depends(auth_user_and_get_token), db_session=Depends(get_session)):
     delete_session_query = delete(Session).where(Session.key == session.key)
     await db_session.execute(delete_session_query)
     await db_session.commit()
-    return Response(status_code=status.HTTP_202_ACCEPTED)
+    return

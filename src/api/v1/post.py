@@ -12,7 +12,7 @@ from serializers.post import PostCreate, PostRetrieve
 router = APIRouter(prefix="/post", tags=["post"])
 
 
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_post(post_data: PostCreate, user: User = Depends(auth_user), db_session=Depends(get_session)) -> Post:
     post = Post(text=post_data.text, author_id=user.id)
     db_session.add(post)
@@ -26,43 +26,29 @@ async def get_post(post: Post = Depends(get_post_or_404)) -> PostRetrieve:
     return post
 
 
-@router.post("/{post_id}/upvote/")
-async def bump_post(
-    user: User = Depends(auth_user), post: Post = Depends(get_post_or_404), db_session=Depends(get_session)
-) -> PostUpvote:
-    upvote_query = select(PostUpvote).where(PostUpvote.user_id == user.id).where(PostUpvote.post_id == post.id)
-    existing_upvote = (await db_session.execute(upvote_query)).scalar()
+@router.patch("/{post_id}/")
+async def update_post(
+    post_data: PostCreate,
+    post: Post = Depends(get_post_or_404),
+    user: User = Depends(auth_user),
+    db_session=Depends(get_session),
+):
+    if post.author_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission for editing this comment.")
 
-    if existing_upvote:
-        if existing_upvote.positive:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Upvote already exists.")
-
-        delete_upvote_query = delete(PostUpvote).where(PostUpvote.id == existing_upvote.id)
-        await db_session.execute(delete_upvote_query)
-
-    upvote = PostUpvote(post_id=post.id, user_id=user.id, positive=True)
-    db_session.add(upvote)
+    post.text = post_data.text
     await db_session.commit()
-    await db_session.refresh(upvote)
-    return upvote
+    await db_session.refresh(post)
+
+    return post
 
 
-@router.post("/{post_id}/downvote/")
-async def sage_post(
-    user: User = Depends(auth_user), post: Post = Depends(get_post_or_404), session=Depends(get_session)
-) -> PostUpvote:
-    upvote_query = select(PostUpvote).where(PostUpvote.user_id == user.id).where(PostUpvote.post_id == post.id)
-    existing_upvote = (await session.execute(upvote_query)).scalar()
+@router.delete("/{post_id}/", status_code=status.HTTP_202_ACCEPTED)
+async def delete_post(
+    post: Post = Depends(get_post_or_404), user: User = Depends(auth_user), db_session=Depends(get_session)
+):
+    if post.author_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission for editing this comment.")
 
-    if existing_upvote:
-        if not existing_upvote.positive:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Upvote already exists.")
-
-        delete_upvote_query = delete(PostUpvote).where(PostUpvote.id == existing_upvote.id)
-        await session.execute(delete_upvote_query)
-
-    upvote = PostUpvote(post_id=post.id, user_id=user.id, positive=False)
-    session.add(upvote)
-    await session.commit()
-    await session.refresh(upvote)
-    return upvote
+    post.deleted = True
+    await db_session.commit()

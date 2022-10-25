@@ -19,6 +19,13 @@ class Config(BaseSettings):
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
         )
 
+    @property
+    def SYNC_DATABASE_URL(self):
+        return (
+            f"postgresql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+            f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        )
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

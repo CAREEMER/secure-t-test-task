@@ -15,6 +15,7 @@ class TextEntityBase(Base):
 class Post(TextEntityBase):
     author_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
     author = relationship("User", primaryjoin="Post.author_id == User.id")
+    deleted = Column(Boolean, nullable=False, default=False)
 
 
 class Comment(TextEntityBase):
@@ -27,6 +28,7 @@ class Comment(TextEntityBase):
         backref="children",
         viewonly=True,
     )
+    deleted = Column(Boolean, nullable=False, default=False)
 
     __table_args__ = (Index("ix_nodes_path", node_path, postgresql_using="gist"),)
 

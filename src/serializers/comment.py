@@ -6,7 +6,12 @@ class CommentCreate(BaseModel):
     text: str
 
 
+class CommentUpdate(BaseModel):
+    text: str
+
+
 class CommentList(BaseModel):
+    id: UUID4
     author_id: UUID4
     text: str
     children: list["CommentList"]
