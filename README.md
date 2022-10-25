@@ -10,6 +10,7 @@ docker-compose -f docker-compose.test.yml -p test down -v
 
 ## Run server
 ```shell
+docker-compose up -d
 cd src
 poetry shell
 poetry install
