@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict
+from typing import Any
 from uuid import uuid4
 
 from tests.conftest import TestClient
@@ -69,7 +69,7 @@ def test_create_child_comment_success(authed_client: TestClient):
 
 def test_create_child_comment_non_existent_parent_comment_id_fail(authed_client: TestClient):
     post_id = create_post(authed_client)
-    _comment_id = create_comment(authed_client, post_id=post_id)
+    create_comment(authed_client, post_id=post_id)
 
     comment_data = {"text": generate_random_string(), "post_id": post_id}
     random_non_existent_comment_id = str(uuid4())

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import UUID4, BaseModel
 
 
 class PostCreate(BaseModel):
@@ -8,6 +8,7 @@ class PostCreate(BaseModel):
 
 
 class PostRetrieve(PostCreate):
-    author_uuid: str
-    created_at: datetime
-    upvote_count: int
+    id: UUID4
+    author_id: UUID4
+    time_created: datetime
+    time_updated: datetime | None

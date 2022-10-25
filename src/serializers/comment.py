@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import UUID4, BaseModel
 
 
@@ -10,11 +12,16 @@ class CommentUpdate(BaseModel):
     text: str
 
 
-class CommentList(BaseModel):
+class CommentRetrieve(BaseModel):
     id: UUID4
-    author_id: UUID4
+    post_id: UUID4
     text: str
-    children: list["CommentList"]
+    time_created: datetime
+    time_updated: datetime | None
+
+
+class CommentTree(CommentRetrieve):
+    children: list["CommentTree"]
 
     class Config:
         orm_mode = True

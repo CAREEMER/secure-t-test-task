@@ -31,15 +31,3 @@ class Comment(TextEntityBase):
     deleted = Column(Boolean, nullable=False, default=False)
 
     __table_args__ = (Index("ix_nodes_path", node_path, postgresql_using="gist"),)
-
-
-class PostUpvote(Base):
-    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False, index=True)
-    post_id = Column(UUID(as_uuid=True), ForeignKey("post.id"), nullable=False, index=True)
-    positive = Column(Boolean, default=True)
-
-
-class CommentUpvote(Base):
-    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False, index=True)
-    comment_uuid = Column(UUID(as_uuid=True), ForeignKey("comment.id"), nullable=False, index=True)
-    positive = Column(Boolean, default=True)

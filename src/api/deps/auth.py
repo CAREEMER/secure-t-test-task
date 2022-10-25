@@ -22,7 +22,7 @@ def escape_auth_header(header_value: str) -> str:
 
 async def auth_user(db_session=Depends(get_session), authorization: str = Depends(session_header)) -> User:
     token = escape_auth_header(authorization)
-    auth_session_query = select(Session, User).where(Session.key == token).join(User, isouter=True)
+    auth_session_query = select(Session, User).where(Session.id == token).join(User, isouter=True)
 
     result = (await db_session.execute(auth_session_query)).all()
     if not result:
@@ -36,7 +36,7 @@ async def auth_user_and_get_token(
     db_session=Depends(get_session), authorization: str = Depends(session_header)
 ) -> Session:
     token = escape_auth_header(authorization)
-    auth_session_query = select(Session).where(Session.key == token)
+    auth_session_query = select(Session).where(Session.id == token)
 
     auth_session = (await db_session.execute(auth_session_query)).scalar()
     if not auth_session:

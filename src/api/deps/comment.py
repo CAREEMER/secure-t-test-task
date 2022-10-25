@@ -7,7 +7,7 @@ from models.post import Comment
 
 
 async def get_comment_or_404(comment_id: str, db_session=Depends(get_session)):
-    comment_query = select(Comment).where(Comment.id == comment_id).where(Comment.deleted == False)
+    comment_query = select(Comment).where(Comment.id == comment_id).where(Comment.deleted == False)  # NOQA: E712
     comment = (await db_session.execute(comment_query)).scalar()
 
     if not comment:
@@ -22,7 +22,7 @@ async def get_parent_comment_or_404(
     if not parent_comment_id:
         return
 
-    comment_query = select(Comment).where(Comment.id == parent_comment_id).where(Comment.deleted == False)
+    comment_query = select(Comment).where(Comment.id == parent_comment_id).where(Comment.deleted == False)  # NOQA: E712
     comment = (await db_session.execute(comment_query)).scalar()
 
     if not comment:
