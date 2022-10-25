@@ -1,0 +1,33 @@
+version: '3.3'
+
+services:
+  backend:
+    build: ./src
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_USER: sample_user
+      DATABASE_PASSWORD: sample_user
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: sample_user
+    command: python main.py
+
+  db:
+    image: postgres:13.4
+    restart: on-failure
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: sample_user
+      POSTGRES_PASSWORD: sample_user
+      POSTGRES_DB: sample_user
+      TZ: GMT+3
+    healthcheck:
+      test: pg_isready -U sample_user -d sample_user
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  postgres_data:
